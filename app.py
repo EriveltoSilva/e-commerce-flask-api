@@ -86,5 +86,23 @@ def read_product(product_id):
     return jsonify({"status": "error", "message": "Produto não encontrado!", }), 404
 
 
+@app.route('/api/v1/products/<int:product_id>', methods=['PUT',])
+def update_product(product_id):
+    product = Product.query.get(product_id)
+    if product:
+        data = request.json
+        if "name" in data:
+            product.name = data['name']
+        if "price" in data:
+            product.price = data.get('price')
+        if "description" in data:
+            product.description = data.get('description')
+        if "quantity" in data:
+            product.quantity = data.get('quantity')
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Produto atualizado com sucesso!", }), 200
+    return jsonify({"status": "error", "message": "Produto não encontrado!", }), 404
+
+
 if __name__ == '__main__':
     app.run(debug=True)
