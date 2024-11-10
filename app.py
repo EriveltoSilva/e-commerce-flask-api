@@ -67,5 +67,24 @@ def delete_product_list():
         return jsonify({"status": "error", "message": "Os dados enviados não são uma lista!", }), 400
 
 
+@app.route('/api/v1/products/<int:product_id>', methods=['GET',])
+def read_product(product_id):
+    product = Product.query.get(product_id)
+    if product:
+        return jsonify({
+            "status": "success",
+            "data": {
+                "id": product.id,
+                "name": product.name,
+                "price": product.price,
+                "description": product.description,
+                "quantity": product.quantity,
+                "created_at": product.created_at,
+                "updated_at": product.updated_at
+            }
+        }), 200
+    return jsonify({"status": "error", "message": "Produto não encontrado!", }), 404
+
+
 if __name__ == '__main__':
     app.run(debug=True)
