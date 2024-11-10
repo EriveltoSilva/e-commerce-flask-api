@@ -227,5 +227,18 @@ def list_cart_items():
     ]), 200
 
 
+@app.route('api/v1/checkout', methods=['POST'])
+@login_required
+def checkout():
+    user = User.query.get(int(current_user.id))
+    cart_items = user.cart
+    if cart_items:
+        for cart_item in cart_items:
+            db.session.delete(cart_item)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Pedido realizado com sucesso!", }), 200
+    return jsonify({"status": "error", "message": "Carrinho vazio!", }), 400
+
+
 if __name__ == '__main__':
     app.run(debug=True)
