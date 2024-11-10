@@ -2,7 +2,7 @@ from flask import Flask
 from flask import request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from flask_login import login_user, logout_user, LoginManager, UserMixin, login_required
+from flask_login import login_user, logout_user, current_user, LoginManager, UserMixin, login_required
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dsfasdfjhladsfhjkerfjduhichsdbfiuewfsfasdfsfsdfsffegds23223g'
@@ -24,6 +24,7 @@ class User(db.Model, UserMixin):
 
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    cart = db.relationship('CartItem', backref='user', lazy=True)
 
     def __repr__(self):
         return f'<User {self.full_name}>'
@@ -46,6 +47,19 @@ class Product(db.Model):
 
     def __str__(self):
         return f'<Product {self.name}>'
+
+
+class CartItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    # quantity = db.Column(db.Integer, nullable=False)
+
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+    def __repr__(self):
+        return f'<CartItem {self.user_id} - {self.product_id}>'
 
 
 @login_manager.user_loader
@@ -168,6 +182,31 @@ def list_products():
         }
         for product in products
     ]), 200
+
+
+@app.route('/api/v1/cart/add/<int:product_id>', methods=['POST'])
+@login_required
+def add_product_to_cart(product_id):
+    product = Product.query.get(product_id)
+
+    if product:
+        cart_item = CartItem(user_id=int(current_user.id), product_id=product.id)
+        db.session.add(cart_item)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Item adicionado ao carrinho com sucesso!", }), 201
+
+    return jsonify({"status": "error", "message": "Produto não encontrado!"}), 401
+
+
+@app.route('/api/v1/cart/<int:product_id>', methods=['DELETE'])
+@login_required
+def delete_product_from_cart(product_id):
+    cart_item = CartItem.query.filter_by(user_id=int(current_user.id), product_id=product_id).first()
+    if cart_item:
+        db.session.delete(cart_item)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Produto removido do carrinho com sucesso!", }), 200
+    return jsonify({"status": "error", "message": "Item não encontrado no carrinho!", }), 404
 
 
 if __name__ == '__main__':
