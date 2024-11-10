@@ -43,5 +43,29 @@ def add_products():
     return jsonify({"status": "error", "message": "Campos faltando!", "data": data}), 400
 
 
+@app.route('/api/v1/products/<int:product_id>', methods=['DELETE',])
+def delete_product(product_id):
+    product = Product.query.get(product_id)
+    if product:
+        db.session.delete(product)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Produto excluído com sucesso!", }), 200
+    return jsonify({"status": "error", "message": "Produto não encontrado!", }), 404
+
+
+@app.route('/api/v1/products', methods=['DELETE',])
+def delete_product_list():
+    product_list = request.json
+    if type(product_list) is list:
+        for product_id in product_list:
+            product = Product.query.get(product_id)
+            if product:
+                db.session.delete(product)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Produtos excluídos com sucesso!", }), 200
+    else:
+        return jsonify({"status": "error", "message": "Os dados enviados não são uma lista!", }), 400
+
+
 if __name__ == '__main__':
     app.run(debug=True)
