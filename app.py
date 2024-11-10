@@ -104,5 +104,22 @@ def update_product(product_id):
     return jsonify({"status": "error", "message": "Produto não encontrado!", }), 404
 
 
+@app.route('/api/v1/products', methods=['GET',])
+def list_products():
+    products = Product.query.all()
+    return jsonify([
+        {
+            "id": product.id,
+            "name": product.name,
+            "price": product.price,
+            "description": product.description,
+            "quantity": product.quantity,
+            "created_at": product.created_at,
+            "updated_at": product.updated_at
+        }
+        for product in products
+    ]), 200
+
+
 if __name__ == '__main__':
     app.run(debug=True)
