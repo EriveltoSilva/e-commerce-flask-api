@@ -209,5 +209,23 @@ def delete_product_from_cart(product_id):
     return jsonify({"status": "error", "message": "Item não encontrado no carrinho!", }), 404
 
 
+@app.route('/api/v1/cart', methods=['GET'])
+@login_required
+def list_cart_items():
+    # user = User.query.get(int(current_user.id))
+    # cart_items = user.cart
+    cart_items = CartItem.query.filter_by(user_id=int(current_user.id)).all()
+    return jsonify([
+        {
+            "id": cart_item.id,
+            "user_id": cart_item.user_id,
+            "product_id": cart_item.product_id,
+            "created_at": cart_item.created_at,
+            "updated_at": cart_item.updated_at
+        }
+        for cart_item in cart_items
+    ]), 200
+
+
 if __name__ == '__main__':
     app.run(debug=True)
