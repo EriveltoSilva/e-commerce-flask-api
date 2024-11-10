@@ -2,14 +2,14 @@ from flask import Flask
 from flask import request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from flask_login import UserMixin, login_user, LoginManager, login_required
+from flask_login import login_user, logout_user, LoginManager, UserMixin, login_required
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dsfasdfjhladsfhjkerfjduhichsdbfiuewfsfasdfsfsdfsffegds23223g'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ecommerce.db'
 
 login_manager = LoginManager(app)
-login_manager.login_view = 'api/v1/accounts/login'
+login_manager.login_view = '/api/v1/accounts/login'
 
 db = SQLAlchemy(app)
 CORS(app)
@@ -63,6 +63,13 @@ def login():
         login_user(user)
         return jsonify({"status": "success", "message": "Login successful"})
     return jsonify({"status": "error", "message": "Usuário não encontrado!"}), 401
+
+
+@app.route('/api/v1/accounts/logout', methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({"status": "success", "message": "Logout realizado com sucesso!"}), 200
 
 
 @app.route('/api/v1/products', methods=['POST',])
