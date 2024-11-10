@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import request
+from flask import request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -30,16 +30,17 @@ class Product(db.Model):
 @app.route('/api/v1/products', methods=['POST',])
 def add_products():
     data = request.json
-    product = Product(
-        name=data['name'],
-        price=data.get('price'),
-        description=data.get('description', ""),
-        quantity=data.get('quantity', 0)
-    )
-    db.session.add(product)
-    db.session.commit()
-
-    return "Produto Salvo com Sucesso!"
+    if "name" in data and "price" in data and "quantity" in data:
+        product = Product(
+            name=data['name'],
+            price=data.get('price'),
+            description=data.get('description', ""),
+            quantity=data.get('quantity', 0)
+        )
+        db.session.add(product)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Produto cadastrado com sucesso!", }), 201
+    return jsonify({"status": "error", "message": "Campos faltando!", "data": data}), 400
 
 
 if __name__ == '__main__':
