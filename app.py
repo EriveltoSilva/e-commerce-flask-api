@@ -1,11 +1,32 @@
 from flask import Flask
 from flask import request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
+from flask_login import UserMixin, login_user, LoginManager, login_required
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'dsfasdfjhladsfhjkerfjduhichsdbfiuewfsfasdfsfsdfsffegds23223g'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ecommerce.db'
 
+login_manager = LoginManager(app)
+login_manager.login_view = 'api/v1/accounts/login'
+
 db = SQLAlchemy(app)
+CORS(app)
+
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(100), unique=True, nullable=False)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(32), nullable=False)
+
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+    def __repr__(self):
+        return f'<User {self.full_name}>'
 
 
 class Product(db.Model):
@@ -27,7 +48,25 @@ class Product(db.Model):
         return f'<Product {self.name}>'
 
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+@app.route('/api/v1/accounts/login', methods=['POST'])
+def login():
+    data = request.json
+    email = data.get('email', "")
+    password = data.get('password', "")
+    user = User.query.filter_by(email=email, password=password).first()
+    if user:
+        login_user(user)
+        return jsonify({"status": "success", "message": "Login successful"})
+    return jsonify({"status": "error", "message": "Usuário não encontrado!"}), 401
+
+
 @app.route('/api/v1/products', methods=['POST',])
+@login_required
 def add_products():
     data = request.json
     if "name" in data and "price" in data and "quantity" in data:
@@ -44,6 +83,7 @@ def add_products():
 
 
 @app.route('/api/v1/products/<int:product_id>', methods=['DELETE',])
+@login_required
 def delete_product(product_id):
     product = Product.query.get(product_id)
     if product:
@@ -54,6 +94,7 @@ def delete_product(product_id):
 
 
 @app.route('/api/v1/products', methods=['DELETE',])
+@login_required
 def delete_product_list():
     product_list = request.json
     if type(product_list) is list:
@@ -87,6 +128,7 @@ def read_product(product_id):
 
 
 @app.route('/api/v1/products/<int:product_id>', methods=['PUT',])
+@login_required
 def update_product(product_id):
     product = Product.query.get(product_id)
     if product:
